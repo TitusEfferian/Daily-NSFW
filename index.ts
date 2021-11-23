@@ -1,49 +1,44 @@
 import { Client, Intents, MessageEmbed, TextChannel } from 'discord.js';
-import {createClient} from 'redis';
+import { createClient } from 'redis';
 import fetch from 'node-fetch';
-import {bot_token, rejuk_notsafe_id} from './config';
+import cron from 'node-cron';
+import { bot_token, rejuk_notsafe_id } from './config';
+import { CommunityUploadInterface } from './types';
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
+const redisClient = createClient();
 
-// const isUpdated = (oldData, newData) => {}
+const getMetaTotal = async () => {
+    const value = await redisClient.get('total');
+    return value;
+};
 
 client.once('ready', async () => {
-
     const channel = client.channels.cache.get(rejuk_notsafe_id) as TextChannel;
-    const redisClient = createClient({
-        url: 'localhost:8080'
-    });
     await redisClient.connect();
-    redisClient.on('error', err=>{
-        console.log(err)
+    redisClient.on('error', err => {
         channel.send(`Redis error: ${err}`);
     });
-    // if (channel) {
-    //     const fetchResult = await fetch('https://community-uploads.highwinds-cdn.com/api/v9/community_uploads?channel_name__in[]=media&channel_name__in[]=nsfw-general&kind=landing&loc=https://hanime.tv');
-    //     const { data } = await fetchResult.json() as { data: { url: string, username: string }[] };
-    //     channel.send({
-    //         embeds: data.filter((_, index) => index < 10).map(({ url, username }) => {
-    //             return new MessageEmbed().setTitle(`from ${username}`).setImage(url);
-    //         }),
-    //     });
-    // }
+    cron.schedule('* * * * *', async () => {
+        if (channel) {
+            const fetchResult = await fetch('https://community-uploads.highwinds-cdn.com/api/v9/community_uploads?channel_name__in[]=media&channel_name__in[]=nsfw-general&kind=landing&loc=https://hanime.tv');
+            const { data, meta } = await fetchResult.json() as CommunityUploadInterface;
+            const metaTotal = await getMetaTotal();
+            if (metaTotal === null) {
+                redisClient.set('total', String(meta.total));
+            }
+            else if (meta.total - Number(metaTotal) >= 10) {
+                channel.send({
+                    embeds: data.filter((_, index) => index < 10).map(({ url, username }) => {
+                        return new MessageEmbed().setTitle(`from ${username}`).setImage(url);
+                    }),
+                });
+            } else {
+                channel.send(`testing cron`);
+            }
+        }
+    });
     console.log('Ready!');
 });
-
-// client.on('interactionCreate', async interaction => {
-//     console.log(interaction)
-// 	if (!interaction.isCommand()) return;
-
-// 	const { commandName, channelId } = interaction;
-// 	if(commandName === 'nsfw') {
-//         const fetchResult = await fetch('https://community-uploads.highwinds-cdn.com/api/v9/community_uploads?channel_name__in[]=media&channel_name__in[]=nsfw-general&kind=landing&loc=https://hanime.tv');
-//         const { data } = await fetchResult.json() as { data: { url: string, username: string }[] };
-//         await interaction.reply({
-//             embeds: data.filter((_,index)=>index < 10).map(({ url, username }) => {
-//                 return new MessageEmbed().setTitle(`from ${username}`).setImage(url);
-//             }),
-//         })
-//     }
-// });
 
 client.login(bot_token).catch(err => {
     console.log(err)
