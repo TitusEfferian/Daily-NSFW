@@ -27,13 +27,12 @@ client.once('ready', async () => {
                 redisClient.set('total', String(meta.total));
             }
             else if (meta.total - Number(metaTotal) >= 10) {
+                redisClient.set('total', String(meta.total));
                 channel.send({
                     embeds: data.filter((_, index) => index < 10).map(({ url, username }) => {
                         return new MessageEmbed().setTitle(`from ${username}`).setImage(url);
                     }),
                 });
-            } else {
-                channel.send(`testing cron`);
             }
         }
     });
