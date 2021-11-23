@@ -18,7 +18,7 @@ client.once('ready', async () => {
     redisClient.on('error', err => {
         channel.send(`Redis error: ${err}`);
     });
-    cron.schedule('* * * * *', async () => {
+    cron.schedule('50 * * * *', async () => {
         if (channel) {
             const fetchResult = await fetch('https://community-uploads.highwinds-cdn.com/api/v9/community_uploads?channel_name__in[]=media&channel_name__in[]=nsfw-general&kind=landing&loc=https://hanime.tv');
             const { data, meta } = await fetchResult.json() as CommunityUploadInterface;
