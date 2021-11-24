@@ -5,7 +5,9 @@ import cron from 'node-cron';
 import { bot_token, rejuk_notsafe_id } from './config';
 import { CommunityUploadInterface } from './types';
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
-const redisClient = createClient();
+const redisClient = createClient({
+    url: 'redis://redis:6379'
+});
 
 const getMetaTotal = async () => {
     const value = await redisClient.get('total');
