@@ -2,7 +2,7 @@ import { Client, Intents, MessageEmbed, TextChannel } from 'discord.js';
 import { createClient } from 'redis';
 import fetch from 'node-fetch';
 import cron from 'node-cron';
-import { bot_token, rejuk_notsafe_id } from './config';
+import { bot_token, rejuk_notsafe_id, WK_NOTSAFE } from './config';
 import { CommunityUploadInterface } from './types';
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
 const redisClient = createClient({
@@ -16,6 +16,7 @@ const getMetaTotal = async () => {
 
 client.once('ready', async () => {
     const channel = client.channels.cache.get(rejuk_notsafe_id) as TextChannel;
+    const WK_CHANNEL = client.channels.cache.get(WK_NOTSAFE) as TextChannel;
     await redisClient.connect();
     redisClient.on('error', err => {
         console.log(err);
@@ -31,6 +32,11 @@ client.once('ready', async () => {
             else if (meta.total - Number(metaTotal) >= 10) {
                 redisClient.set('total', String(meta.total));
                 channel.send({
+                    embeds: data.filter((_, index) => index < 10).map(({ url, username }) => {
+                        return new MessageEmbed().setTitle(`from ${username}`).setImage(url);
+                    }),
+                });
+                WK_CHANNEL.send({
                     embeds: data.filter((_, index) => index < 10).map(({ url, username }) => {
                         return new MessageEmbed().setTitle(`from ${username}`).setImage(url);
                     }),
