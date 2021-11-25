@@ -18,7 +18,7 @@ client.once('ready', async () => {
     const channel = client.channels.cache.get(rejuk_notsafe_id) as TextChannel;
     await redisClient.connect();
     redisClient.on('error', err => {
-        channel.send(`Redis error: ${err}`);
+        console.log(err);
     });
     cron.schedule('50 * * * *', async () => {
         if (channel) {
